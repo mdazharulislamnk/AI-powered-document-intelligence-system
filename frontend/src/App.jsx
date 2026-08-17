@@ -111,7 +111,7 @@ function App() {
         `- **Retrieval Accuracy**: ${data.avg_retrieval}/5.0\n` +
         `- **Answer Relevance**: ${data.avg_relevance}/5.0\n` +
         `- **Faithfulness (No Hallucination)**: ${data.avg_hallucination}/5.0\n\n` +
-        `*Evaluation conducted using ${selectedModel} as the judge.*` + errorNote;
+        `*Evaluation conducted using ${MODELS.find(m => m.id === selectedModel)?.name || selectedModel} as the judge.*` + errorNote;
 
       if (data.details && data.details.length > 0 && !hasError) {
         scorecard += `\n\n---\n\n### 📝 Detailed Question Breakdown\n\n`;

@@ -63,7 +63,7 @@ def run_evaluation(model_name="gemini-3-flash-preview"):
             eval_prompt += f"--- Pair {i+1} ---\nQuestion: {q}\nContext: {ctx}\nSystem Answer: {ans}\n\n"
             
         eval_response = eval_client.models.generate_content(
-            model="gemini-3-flash-preview", # Dedicated judge model
+            model=model_name, # Use the selected model as the judge to bypass quota limits on 3.0 Flash
             contents=eval_prompt,
             config=types.GenerateContentConfig(temperature=0.1)
         )

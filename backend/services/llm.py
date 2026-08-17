@@ -45,16 +45,18 @@ def stream_rag_response(messages: list[dict], context_chunks: list[dict], model_
             if chunk.text:
                 yield chunk.text
     except errors.ServerError as e:
-        yield f"\n\n**Service Unavailable**: The `{model_name}` model is currently experiencing unusually high demand. Spikes in demand are temporary. Please wait a few moments and try your request again, or I highly recommend switching to the `gemini-3.6-flash` or `gemini-3-flash-preview` model in the settings menu to continue immediately."
+        ui_name = {"gemini-3-flash-preview": "Gemini 3.0 Flash", "gemini-3.6-flash": "Gemini 3.6 Flash", "gemini-3.5-flash": "Gemini 3.5 Flash"}.get(model_name, model_name)
+        yield f"\n\n**Service Unavailable**: The `{ui_name}` model is currently experiencing unusually high demand. Spikes in demand are temporary. Please wait a few moments and try your request again, or I highly recommend switching to another model (like `Gemini 3.0 Flash` or `Gemini 3.6 Flash`) in the settings menu above to continue immediately."
     except errors.ClientError as e:
+        ui_name = {"gemini-3-flash-preview": "Gemini 3.0 Flash", "gemini-3.6-flash": "Gemini 3.6 Flash", "gemini-3.5-flash": "Gemini 3.5 Flash"}.get(model_name, model_name)
         error_str = str(e)
         if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
             import re
             retry_match = re.search(r'retryDelay\':\s*\'(\d+)s\'', error_str)
             wait_time = f" approximately {retry_match.group(1)} seconds" if retry_match else " a few moments"
-            yield f"\n\n**Usage Limit Reached**: The current API token quota for the `{model_name}` model has been exhausted. Please wait{wait_time} before trying again. Alternatively, I highly recommend switching to the `gemini-3.6-flash` or `gemini-3-flash-preview` model in the settings menu to continue our conversation right away."
+            yield f"\n\n**Usage Limit Reached**: The current API token quota for the `{ui_name}` model has been exhausted. Please wait{wait_time} before trying again. Alternatively, I highly recommend switching to another model (like `Gemini 3.0 Flash` or `Gemini 3.6 Flash`) in the settings menu above to continue our conversation right away."
         else:
             clean_err = getattr(e, 'message', str(e).split("{'error'")[0].strip())
-            yield f"\n\n**System Notice**: I encountered an unexpected error while communicating with the `{model_name}` model. To resolve this, please switch to the `gemini-3.6-flash` or `gemini-3-flash-preview` model. Details: {clean_err}"
+            yield f"\n\n**System Notice**: I encountered an unexpected error while communicating with the `{ui_name}` model. To resolve this, please switch to another model in the dropdown menu. Details: {clean_err}"
     except Exception as e:
         yield f"\n\n**System Error**: An unexpected system error occurred. {str(e)}"
