@@ -39,7 +39,7 @@ function App() {
     formData.append('file', file);
 
     try {
-      const res = await fetch('http://localhost:8000/api/upload', {
+      const res = await fetch('http://localhost:8001/api/upload', {
         method: 'POST',
         body: formData,
       });
@@ -79,7 +79,7 @@ function App() {
     setIsTyping(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/chat', {
+      const response = await fetch('http://localhost:8001/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: updatedMessages }),
@@ -123,8 +123,7 @@ function App() {
             <Bot size={28} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-200 to-purple-200">NidusLab AI</h1>
-            <p className="text-xs text-indigo-400 font-medium">Document Intelligence</p>
+            <h1 className="text-xl font-bold tracking-tight">AI-powered Document Intelligence System</h1>
           </div>
         </div>
 
@@ -237,9 +236,11 @@ function App() {
                       {msg.role === 'user' ? (
                         <p className="whitespace-pre-wrap text-[15px]">{msg.content}</p>
                       ) : (
-                        <ReactMarkdown className="text-[15px] max-w-none break-words">
-                          {msg.content}
-                        </ReactMarkdown>
+                        <div className="text-[15px] max-w-none break-words prose-sm prose-invert">
+                          <ReactMarkdown>
+                            {msg.content}
+                          </ReactMarkdown>
+                        </div>
                       )}
                     </div>
                   </div>
