@@ -65,7 +65,8 @@ function App() {
     formData.append('file', file);
 
     try {
-      const res = await fetch('http://localhost:8001/api/upload', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const res = await fetch(`${apiUrl}/api/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -103,7 +104,8 @@ function App() {
     setMessages(prev => [...prev, { role: 'model', content: 'Initializing rigorous AI evaluation protocol... This will test 5 predefined questions against the document context. This will take anywhere from a few seconds to up to a few minutes depending on the selected AI model\'s response times and rate limits.' }]);
     
     try {
-      const res = await fetch(`http://localhost:8001/api/evaluate?model=${selectedModel}`);
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const res = await fetch(`${apiUrl}/api/evaluate?model=${selectedModel}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Evaluation failed');
       
@@ -155,7 +157,8 @@ function App() {
     setIsTyping(true);
 
     try {
-      const response = await fetch('http://localhost:8001/api/chat', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      const response = await fetch(`${apiUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: updatedMessages, model: selectedModel }),
