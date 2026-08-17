@@ -16,7 +16,7 @@ QUESTIONS = [
     "Who is the target audience or what is the scope of this work?"
 ]
 
-def run_evaluation(model_name="gemini-3.5-flash"):
+def run_evaluation(model_name="gemini-3-flash-preview"):
     print("=" * 60)
     print("Starting BATCH RAG System Evaluation (High Speed)")
     print("=" * 60)
