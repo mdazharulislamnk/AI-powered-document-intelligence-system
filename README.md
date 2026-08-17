@@ -5,90 +5,301 @@
 ![React](https://img.shields.io/badge/React-18-blueviolet)
 ![Author](https://img.shields.io/badge/Author-Md._Azharul_Islam-orange)
 
-A sophisticated full-stack application that enables intelligent semantic search and conversational querying over documents. Designed to operate flawlessly on resource-constrained deployment environments (like Render) while delivering a premium, rich aesthetic user experience.
+## 1. Title & Overview
+A sophisticated full-stack application that enables intelligent semantic search and conversational querying over documents. Designed to operate flawlessly on resource-constrained deployment environments (like Render) while delivering a premium, rich aesthetic user experience. The core objective is a comprehensive Retrieval-Augmented Generation (RAG) system that can ingest PDF or TXT files, extract and process their text, and answer user questions with highly accurate, hallucination-free evidence drawn directly from the original document.
 
 ---
 
-## 🏗 System Architecture
+## 2. Complete Tech Stack
 
-The application adopts a robust Client-Server architecture utilizing a modern stack:
-
-*   **Frontend**: Built with **React** and **Vite** using pure JavaScript. Styled entirely with **Tailwind CSS** focusing on dark-mode glassmorphism.
-*   **Backend**: A high-performance **FastAPI** Python server managing document parsing, embedding generation, and LLM communication.
-*   **Vector Database**: **ChromaDB** for fast semantic vector retrieval of document chunks.
-*   **LLM Engine**: **Gemini 3 Flash** via the `google-genai` SDK, configured with strict system instructions to prevent hallucination and provide verified source citations.
-
-### RAG (Retrieval-Augmented Generation) Design Tradeoffs
-1.  **Hybrid Embeddings**: Sentence Transformers (`all-MiniLM-L6-v2`) require heavy Torch dependencies and significant RAM. To accommodate deployments on free/hobby tiers (like Render), a toggle (`USE_LOCAL_EMBEDDINGS`) allows switching from the heavy local model to a lightweight HuggingFace Inference API call.
-2.  **Streaming Architecture**: Instead of waiting 10-15 seconds for Gemini to formulate a complete answer from the context chunks, the backend utilizes `StreamingResponse` over HTTP. The React frontend immediately parses these chunks, providing an instantaneous, native-feeling typing effect.
+| Layer | Technologies Used |
+| :--- | :--- |
+| **Frontend** | React 18, Vite, Tailwind CSS (Typography & Forms), Lucide React, React Dropzone, React Markdown (`remark-gfm`, `rehype-raw`) |
+| **Backend** | Python 3.10, FastAPI, Uvicorn, PyMuPDF (`fitz`), Python-Multipart |
+| **AI / ML** | Google GenAI SDK (Gemini), OpenAI SDK (Groq API integration for GPT-OSS models), HuggingFace Inference API |
+| **Vector DB / Search**| ChromaDB, Sentence-Transformers (`all-MiniLM-L6-v2`), `rank_bm25` (Keyword search) |
+| **Infrastructure** | Docker, Docker Compose |
 
 ---
 
-## 🚀 Local Setup Instructions
+## 3. Table of Contents
+1. [Title & Overview](#1-title--overview)
+2. [Complete Tech Stack](#2-complete-tech-stack)
+3. [Table of Contents](#3-table-of-contents)
+4. [Project Directory Structure](#4-project-directory-structure)
+5. [Prerequisites](#5-prerequisites)
+6. [Environment Variables](#6-environment-variables)
+7. [A to Z Setup Guide (Manual Installation)](#7-a-to-z-setup-guide-manual-installation)
+8. [A to Z Setup Guide (Docker Compose)](#8-a-to-z-setup-guide-docker-compose)
+9. [Architecture & Design Tradeoffs](#9-architecture--design-tradeoffs)
+10. [Vector Data Model (ChromaDB)](#10-vector-data-model-chromadb)
+11. [Feature Matrix & Task Completion](#11-feature-matrix--task-completion)
+12. [Complete API Reference](#12-complete-api-reference)
+13. [Problems Faced & Solutions](#13-problems-faced--solutions)
+14. [Cloud Deployment (Render Guide)](#14-cloud-deployment-render-guide)
+15. [Troubleshooting & Git Practices](#15-troubleshooting--git-practices)
+16. [Developer Signature](#16-developer-signature)
 
-### Prerequisites
-*   Docker & Docker Compose installed.
-*   Alternatively, Node.js (v22+) and Python (v3.10+) for manual setup.
+---
 
-### 1. Environment Configuration
-Create a `.env` file in the root directory:
-```env
-# Gemini API
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Embeddings (Set to False to use the API on low-RAM servers)
-USE_LOCAL_EMBEDDINGS=True
-HF_TOKEN=your_huggingface_token_here
+## 4. Project Directory Structure
+```text
+AI-powered-document-intelligence-system/
+├── backend/
+│   ├── api/
+│   │   ├── chat.py           # LLM Streaming routes
+│   │   ├── evaluate.py       # Automated testing routes
+│   │   └── upload.py         # Document ingestion & indexing routes
+│   ├── core/
+│   │   └── config.py         # Environment parsing
+│   ├── services/
+│   │   ├── document_parser.py# PyMuPDF extraction
+│   │   ├── embeddings.py     # SentenceTransformer / HF Inference
+│   │   ├── llm.py            # Gemini & Groq router & stream formatting
+│   │   ├── rag.py            # Hybrid Search (BM25 + ChromaDB) logic
+│   │   └── vector_store.py   # ChromaDB collection management
+│   ├── evaluate.py           # Standalone terminal evaluation script
+│   ├── main.py               # FastAPI entry point
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx           # Main UI & State Management
+│   │   ├── index.css         # Tailwind & Typography configuration
+│   │   └── main.jsx
+│   ├── index.html
+│   ├── package.json
+│   ├── tailwind.config.js
+│   ├── vite.config.js
+│   └── Dockerfile
+├── docker-compose.yml
+├── .env.example
+├── .gitignore
+└── README.md
 ```
 
-### 2. Using Docker (Recommended)
-You can launch the entire stack (Backend + Frontend) via Docker Compose:
-```bash
-docker-compose up --build
-```
-*   **Frontend**: http://localhost:5173
-*   **Backend API**: http://localhost:8000
+---
+
+## 5. Prerequisites
+*   **Docker & Docker Compose** (Recommended for isolated environments).
+*   **Python 3.10+** (For manual backend execution).
+*   **Node.js 20.19+ or 22.12+** (For manual frontend execution).
 
 ---
 
-## 📡 API Contracts
+## 6. Environment Variables
+Create a `.env` file in the root directory and define the following keys. You can reference `.env.example`.
+
+| Key | Description | Required? |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEY` | Your Google Gemini API Key used for standard LLM queries and evaluation suites. | Yes |
+| `GROQ_API_KEY` | Your Groq API Key used to power the high-speed GPT-OSS models via OpenAI compatibility layer. | Yes |
+| `USE_LOCAL_EMBEDDINGS` | `True` to use local PyTorch transformers. `False` to offload to HuggingFace API (Saves ~1GB RAM). | Optional (Defaults to `True`) |
+| `HF_TOKEN` | HuggingFace Token required if `USE_LOCAL_EMBEDDINGS=False` to prevent rate limits. | Required if local = False |
+
+---
+
+## 7. A to Z Setup Guide (Manual Installation)
+
+### Backend Setup
+1. Open a terminal and navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Create and activate a Python virtual environment:
+   ```bash
+   python -m venv venv
+   # Windows
+   .\venv\Scripts\activate
+   # macOS/Linux
+   source venv/bin/activate
+   ```
+3. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Start the FastAPI development server:
+   ```bash
+   python -m uvicorn main:app --port 8001 --reload
+   ```
+
+### Frontend Setup
+1. Open a new terminal and navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install Node modules:
+   ```bash
+   npm install
+   ```
+3. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+4. Access the application in your browser at `http://localhost:5173`.
+
+---
+
+## 8. A to Z Setup Guide (Docker Compose)
+
+If you prefer an isolated setup without installing dependencies globally, you can use Docker.
+
+1. Ensure Docker Desktop is running.
+2. In the root directory (where `docker-compose.yml` is located), execute:
+   ```bash
+   docker-compose up --build
+   ```
+3. Wait for the images to build and services to start.
+4. **Verify Services:**
+   - Frontend running at: `http://localhost:5173`
+   - Backend running at: `http://localhost:8001` (You can visit `http://localhost:8001/docs` for the Swagger API UI).
+5. To stop the containers safely, press `CTRL+C` or run:
+   ```bash
+   docker-compose down
+   ```
+
+---
+
+## 9. Architecture & Design Tradeoffs
+
+### The RAG Pipeline Data Flow
+1. **Ingestion**: PDF/TXT files are parsed via `PyMuPDF`. Text is cleaned (newlines, multiple spaces stripped).
+2. **Chunking**: Text is split into manageable chunks (~500 characters) while preserving page number metadata.
+3. **Embedding**: Chunks are passed through `all-MiniLM-L6-v2` to generate semantic vectors.
+4. **Vector Store**: Embeddings and chunks are stored in persistent ChromaDB.
+5. **Hybrid Search**: When a user queries, the system uses **Reciprocal Rank Fusion (RRF)** to combine Semantic Search (ChromaDB) and Keyword Search (BM25) to find the absolute most relevant chunks.
+6. **LLM Synthesis**: The chunks are sent as context to either Gemini or Groq (GPT-OSS) with strict system instructions to cite page numbers and prevent hallucination. The response is streamed back via Server-Sent Events (SSE).
+
+### Tradeoff: Hybrid Embeddings & RAM Constraints
+Sentence Transformers (`all-MiniLM-L6-v2`) require heavy Torch dependencies and significant RAM. To accommodate deployments on free/hobby tiers (like Render, which limits apps to 512MB RAM), I engineered a toggle (`USE_LOCAL_EMBEDDINGS`). This allows the system to switch from a heavy local PyTorch model to a lightweight HuggingFace Inference API call, sacrificing a tiny bit of latency to save nearly 1GB of memory overhead.
+
+### Tradeoff: Dynamic Model Routing
+To provide fallback stability and performance testing, the backend dynamically routes prompts. Gemini acts as the baseline, while Groq acts as a high-speed LPU alternative. 
+
+---
+
+## 10. Vector Data Model (ChromaDB)
+
+The ChromaDB implementation is stored locally on disk (`./chroma_db`). The database is explicitly cleared upon every new file upload to prevent cross-contamination between assessments and ensure the AI strictly searches the currently focused document.
+
+**Collection Name:** `documents`
+
+**Schema:**
+*   `ids`: Unique UUID strings (`str`) for every chunk.
+*   `documents`: The raw extracted text payload of the chunk (`str`).
+*   `embeddings`: The vector array generated by the embedding model (`List[float]`).
+*   `metadatas`: A dictionary containing `{ "page": 1, "chunk_index": 0 }` used for precise source attribution during LLM generation.
+
+---
+
+## 11. Feature Matrix & Task Completion
+
+| Requirement | Description | Status |
+| :--- | :--- | :--- |
+| **Document Ingestion** | Accept PDF or TXT files, extract raw text, and clean it. | ✅ Done |
+| **Chunking** | Split text into meaningful chunks and store metadata (page number). | ✅ Done |
+| **Embedding Gen.** | Produce vector embeddings for each chunk (Sentence-Transformers). | ✅ Done |
+| **Vector Store** | Persist embeddings in a vector database (ChromaDB). | ✅ Done |
+| **Semantic Search** | Embed query and perform vector search to retrieve top chunks. | ✅ Done |
+| **RAG Pipeline** | LLM relies primarily on retrieved context, avoiding hallucinations. | ✅ Done |
+| **Source Attribution** | Answers accompanied by explicit page-level citations. | ✅ Done |
+| **Frontend Display** | React/Next.js frontend showing answers and source chunks. | ✅ Done |
+| **Bonus: Memory** | Preserve context across follow-up questions. | ✅ Done |
+| **Bonus: Hybrid Search**| Combine semantic (vector) search with keyword (BM25) search. | ✅ Done |
+| **Bonus: Eval Suite** | Provide predefined questions testing accuracy, relevance, latency. | ✅ Done |
+| **Bonus: Streaming** | Stream LLM responses to frontend in real-time. | ✅ Done |
+| **Bonus: Docker** | Single-command startup via `docker-compose.yml`. | ✅ Done |
+
+---
+
+## 12. Complete API Reference
 
 ### 1. Upload Document
 *   **Endpoint**: `POST /api/upload`
-*   **Content-Type**: `multipart/form-data`
-*   **Payload**: `file` (PDF or TXT)
-*   **Response**: 
-    ```json
-    { "message": "Successfully parsed 15 chunks." }
-    ```
+*   **Payload**: `multipart/form-data` with `file`
+*   **Behavior**: Clears existing ChromaDB, chunks document, generates embeddings, stores in DB.
+*   **Response**: `{ "status": "success", "message": "Processed 15 chunks" }`
 
-### 2. Chat (Streaming)
+### 2. Stream Chat
 *   **Endpoint**: `POST /api/chat`
-*   **Content-Type**: `application/json`
-*   **Payload**: 
+*   **Payload (JSON)**: 
     ```json
     {
       "messages": [
-        { "role": "user", "content": "What is the summary of this document?" }
+        { "role": "user", "content": "What is the primary methodology?" }
+      ],
+      "model": "openai/gpt-oss-120b"
+    }
+    ```
+*   **Behavior**: Performs Hybrid RRF Search. Formulates context. Translates roles if needed. Streams response.
+*   **Response**: `text/plain` via Server-Sent Events (SSE).
+
+### 3. Automated Evaluation Suite
+*   **Endpoint**: `GET /api/evaluate?model=openai/gpt-oss-120b`
+*   **Behavior**: Executes 5 predefined questions against the current document, evaluates Faithfulness and Relevance using an LLM-as-a-judge, and computes average latency.
+*   **Response (JSON)**:
+    ```json
+    {
+      "success": true,
+      "avg_latency": 1.45,
+      "avg_retrieval": 5.0,
+      "details": [
+        { "question": "...", "retrieval_score": 5, "explanation": "..." }
       ]
     }
     ```
-*   **Response**: `text/plain` (Streamed Server-Sent chunks)
 
 ---
 
-## ☁️ Deployment Notes for Render
-When deploying the FastAPI backend to Render's free tier:
-1. Ensure the `requirements.txt` is updated.
-2. Set the Environment Variable `USE_LOCAL_EMBEDDINGS` to `False` in the Render dashboard. This completely bypasses downloading the PyTorch models, allowing the application to stay comfortably within the 512MB RAM limit.
-3. Ensure the start command is `uvicorn main:app --host 0.0.0.0 --port $PORT`.
+## 13. Problems Faced & Solutions
+
+### 1. Windows Console Unicode Crash (`charmap` codec)
+*   **Problem**: While printing automated evaluation reasoning to the backend terminal, Groq models occasionally generated a special "non-breaking hyphen" (`\u2011`). Windows Command Prompt (CP1252 default encoding) crashed the entire Python process when attempting to `print()` this character.
+*   **Solution**: Wrapped the console print statements in a safe ASCII encoder: `.encode('ascii', 'replace').decode('ascii')`. This replaces unsupported terminal characters with standard ASCII without corrupting the API response sent to the frontend.
+
+### 2. API Standard Mismatch (Gemini vs OpenAI/Groq)
+*   **Problem**: The frontend managed chat history using Google's role standard (`{ role: 'model' }`). When dynamically switching to Groq (which enforces OpenAI standards), Groq's API rejected the request with a 400 Bad Request: `discriminator property 'role' has invalid value` because it expects `{ role: 'assistant' }`.
+*   **Solution**: Implemented a middleware layer in `llm.py` that intercepts the chat array and dynamically translates roles (`"model" -> "assistant"`) before routing to Groq, ensuring universal compatibility without changing the React frontend logic.
+
+### 3. ChromaDB Stale Cache on Re-Upload (Cross-Contamination)
+*   **Problem**: When uploading a new PDF, the backend `clear_chroma()` function successfully deleted the database, but `rag.py` retained a cached memory reference to the old deleted collection, causing a "Collection does not exist" crash on the next query.
+*   **Solution**: Refactored `vector_store.py` to use a dynamic getter function (`get_collection()`). `rag.py` now invokes this getter on every query, guaranteeing it always references the newly built collection.
+
+### 4. Raw HTML Generated inside Markdown Tables
+*   **Problem**: Groq models often generated HTML tags (like `<br>`) inside Markdown tables to handle spacing. The `react-markdown` library explicitly strips dangerous HTML, causing the literal string `<br>` to render visibly in the UI.
+*   **Solution**: Installed the `rehype-raw` plugin and injected it into the ReactMarkdown component, allowing safe, sanitized HTML tags to render naturally within the beautifully styled tables.
+
+### 5. Horizontal Overflow on Mobile Devices
+*   **Problem**: When the AI generated dense, multi-column tables, the physical width exceeded standard mobile viewports (e.g., iPhone 16 Pro Max), causing the entire application layout to stretch and break horizontal scrolling.
+*   **Solution**: Applied `overflow-x-auto break-words w-full` strictly to the chat bubble container in Tailwind CSS. This isolates the scrolling behavior, meaning only the table itself scrolls horizontally while the app layout remains completely locked.
 
 ---
 
-## ✨ Bonus Implementations
-*   **Streaming UI**: Real-time token streaming directly into the beautiful glassmorphism chat interface.
-*   **Source Attributions**: The AI is strictly instructed to return page-number citations, bringing high transparency to its answers.
-*   **Drag & Drop**: Seamless React Dropzone integration with pulsing loading indicators.
+## 14. Cloud Deployment (Render Guide)
+
+When deploying the FastAPI backend to Render's free tier, memory limits (512MB) are the primary constraint.
+
+1.  Connect your GitHub repository to Render and create a new **Web Service**.
+2.  Set the environment to **Python 3**.
+3.  Set the Build Command: `pip install -r backend/requirements.txt`
+4.  Set the Start Command: `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT`
+5.  **CRITICAL**: Under Environment Variables, add `USE_LOCAL_EMBEDDINGS=False` and supply a valid `HF_TOKEN`. This prevents the heavy PyTorch library from loading into RAM, keeping your application footprint under ~300MB.
+6.  *Note: Render free instances have ephemeral storage. Uploaded PDFs and ChromaDB indexes will be wiped if the server sleeps.*
 
 ---
-**Author:** Md. Azharul Islam
+
+## 15. Troubleshooting & Git Practices
+
+*   **Missing API Keys:** If the system hangs or returns 500 errors during chat, verify that `.env` contains valid keys and is placed in the **root directory**.
+*   **Port Conflicts:** Ensure ports `8001` (Backend) and `5173` (Frontend) are not being used by other local services.
+*   **Git Cleanliness:** The `.env` file, `prompt.txt`, Python caches (`__pycache__`), Node modules (`node_modules`), and the local ChromaDB storage folder (`chroma_db`) are intentionally excluded via `.gitignore` to maintain security and keep the repository weight low.
+
+---
+
+## 16. Developer Signature
+
+|  |  |
+| :--- | :--- |
+| **Developer** | Md. Azharul Islam |
+| **GitHub Profile** | [@mdazharulislamnk](https://github.com/mdazharulislamnk) |
+| **Repository** | [AI-powered-document-intelligence-system](https://github.com/mdazharulislamnk/AI-powered-document-intelligence-system) |
