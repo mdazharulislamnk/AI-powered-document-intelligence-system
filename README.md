@@ -94,8 +94,13 @@ Create a `.env` file in the root directory and define the following keys. You ca
 | :--- | :--- | :--- |
 | `GEMINI_API_KEY` | Your Google Gemini API Key used for standard LLM queries and evaluation suites. | Yes |
 | `GROQ_API_KEY` | Your Groq API Key used to power the high-speed GPT-OSS models via OpenAI compatibility layer. | Yes |
-| `USE_LOCAL_EMBEDDINGS` | `True` to use local PyTorch transformers. `False` to offload to HuggingFace API (Saves ~1GB RAM). | Optional (Defaults to `True`) |
-| `HF_TOKEN` | HuggingFace Token required if `USE_LOCAL_EMBEDDINGS=False` to prevent rate limits. | Required if local = False |
+| `HOST` | Backend host address (e.g., `0.0.0.0`). | Optional |
+| `PORT` | Backend port number (e.g., `8000`). | Optional |
+| `FRONTEND_URL` | CORS allowed origin for the frontend (e.g., `http://localhost:5173`). | Optional |
+| `VECTOR_DB_PATH` | Path to store the ChromaDB vector collections. | Optional |
+| `UPLOAD_DIR` | Directory to store uploaded document files temporarily. | Optional |
+| `USE_LOCAL_EMBEDDINGS` | `True` to use local PyTorch transformers. `False` to offload to HuggingFace API. | Optional |
+| `HF_TOKEN` | HuggingFace Token required if `USE_LOCAL_EMBEDDINGS=False`. | Required if local = False |
 
 ---
 
@@ -115,19 +120,28 @@ You must create a `.env` file to securely store your API keys.
 1. In the root directory of the project, create a new file named exactly `.env`.
 2. Open the `.env` file in any text editor and paste the following configuration:
 ```env
-# Gemini API Key (Required for standard LLM queries)
-# Get yours here: https://aistudio.google.com/app/apikey
-GEMINI_API_KEY=your_gemini_api_key_here
+# =========================
+# AI / LLM Configuration
+# =========================
+GEMINI_API_KEY="your_gemini_api_key_here"
+GROQ_API_KEY="your_groq_api_key_here"
 
-# Groq API Key (Required for GPT-OSS 120B/20B high-speed models)
-# Get yours here: https://console.groq.com/keys
-GROQ_API_KEY=your_groq_api_key_here
+# Embeddings (Optional override for low RAM servers)
+# USE_LOCAL_EMBEDDINGS=True
+# HF_TOKEN="your_hf_token_here"
 
-# Embeddings Configuration (Set to False on low-RAM servers like Render)
-USE_LOCAL_EMBEDDINGS=True
+# =========================
+# Backend Configuration
+# =========================
+HOST=0.0.0.0
+PORT=8000
+FRONTEND_URL=http://localhost:5173 
 
-# HuggingFace Token (Only required if USE_LOCAL_EMBEDDINGS=False)
-HF_TOKEN=your_huggingface_token_here
+# =========================
+# Vector DB & Storage
+# =========================
+VECTOR_DB_PATH=./vector_store 
+UPLOAD_DIR=./uploads
 ```
 
 ### Step 3: Backend Setup (Python & FastAPI)
