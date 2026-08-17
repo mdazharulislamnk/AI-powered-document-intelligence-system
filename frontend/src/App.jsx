@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { UploadCloud, FileText, Send, Loader2, Bot, CheckCircle2, AlertCircle, Menu, X, Sun, Moon, ChevronDown, Activity } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -10,6 +12,8 @@ function cn(...inputs) {
 }
 
 const MODELS = [
+  { id: 'openai/gpt-oss-120b', name: 'GPT-OSS 120B (Groq)' },
+  { id: 'openai/gpt-oss-20b', name: 'GPT-OSS 20B (Groq)' },
   { id: 'gemini-3-flash-preview', name: 'Gemini 3.0 Flash' },
   { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash' },
   { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' }
@@ -96,7 +100,7 @@ function App() {
     setIsSidebarOpen(false);
     
     setMessages(prev => [...prev, { role: 'user', content: 'Run comprehensive RAG System Evaluation.' }]);
-    setMessages(prev => [...prev, { role: 'model', content: 'Initializing rigorous AI evaluation protocol... This will test 5 predefined questions against the document context. This will take anywhere from a few seconds to up to a few minutes depending on Gemini API response times and rate limits.' }]);
+    setMessages(prev => [...prev, { role: 'model', content: 'Initializing rigorous AI evaluation protocol... This will test 5 predefined questions against the document context. This will take anywhere from a few seconds to up to a few minutes depending on the selected AI model\'s response times and rate limits.' }]);
     
     try {
       const res = await fetch(`http://localhost:8001/api/evaluate?model=${selectedModel}`);
@@ -385,8 +389,8 @@ function App() {
                       {msg.role === 'user' ? (
                         <p className="whitespace-pre-wrap text-[15px]">{msg.content}</p>
                       ) : (
-                        <div className="text-[15px] max-w-none break-words prose-sm dark:prose-invert">
-                          <ReactMarkdown>
+                        <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none prose-p:leading-relaxed prose-p:text-zinc-700 dark:prose-p:text-zinc-300 prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-zinc-900 dark:prose-headings:text-zinc-100 prose-a:text-indigo-600 dark:prose-a:text-indigo-400 prose-a:no-underline hover:prose-a:underline prose-strong:font-semibold prose-strong:text-zinc-900 dark:prose-strong:text-zinc-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:bg-zinc-100 dark:prose-code:bg-zinc-800 prose-code:text-indigo-600 dark:prose-code:text-indigo-400 prose-code:before:content-none prose-code:after:content-none prose-pre:bg-zinc-50 dark:prose-pre:bg-zinc-900/50 prose-pre:border prose-pre:border-zinc-200 dark:prose-pre:border-zinc-800 prose-pre:rounded-xl prose-pre:shadow-sm prose-td:border-zinc-200 dark:prose-td:border-zinc-800 prose-th:border-zinc-200 dark:prose-th:border-zinc-800 overflow-x-auto break-words w-full">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                             {msg.content}
                           </ReactMarkdown>
                         </div>

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from services.document_parser import process_document
 from services.embeddings import generate_embeddings
-from services.vector_store import store_in_chroma
+from services.vector_store import store_in_chroma, clear_chroma
 
 router = APIRouter()
 
@@ -17,7 +17,8 @@ async def upload_document(file: UploadFile = File(...)):
     texts = [chunk["text"] for chunk in chunks]
     embeddings = generate_embeddings(texts)
     
-    # 3. Store in Vector DB
+    # 3. Store in Vector DB (Clear previous to ensure only current file is queried)
+    clear_chroma()
     store_in_chroma(chunks, embeddings)
     
     return {"status": "success", "message": f"Processed {len(chunks)} chunks"}

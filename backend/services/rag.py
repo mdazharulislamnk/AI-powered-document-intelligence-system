@@ -1,12 +1,13 @@
 from services.embeddings import generate_embeddings
-from services.vector_store import collection
+from services.vector_store import get_collection
 from rank_bm25 import BM25Okapi
 import numpy as np
 
 def retrieve_context(query: str, top_k: int = 5):
+    col = get_collection()
     # 1. Semantic Search (Vector)
     query_embedding = generate_embeddings([query])[0]
-    results = collection.query(
+    results = col.query(
         query_embeddings=[query_embedding],
         n_results=top_k * 2  # fetch more for fusion
     )
@@ -18,7 +19,7 @@ def retrieve_context(query: str, top_k: int = 5):
     semantic_metas = results['metadatas'][0]
     
     # 2. Keyword Search (BM25) over ALL documents in DB
-    all_docs = collection.get()
+    all_docs = col.get()
     all_texts = all_docs['documents']
     all_metas = all_docs['metadatas']
     

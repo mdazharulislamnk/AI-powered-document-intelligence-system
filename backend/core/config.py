@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
     HF_TOKEN: str = ""
     USE_LOCAL_EMBEDDINGS: bool = True
     HOST: str = "0.0.0.0"

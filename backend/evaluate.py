@@ -1,12 +1,15 @@
 import time
 import json
+import re
 from google import genai
 from google.genai import types
+from openai import OpenAI, APIError
 from services.rag import retrieve_context
 from core.config import settings
 
-# Initialize Gemini Client for Evaluation
+# Initialize Clients for Evaluation
 eval_client = genai.Client(api_key=settings.GEMINI_API_KEY)
+groq_client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=settings.GROQ_API_KEY)
 
 QUESTIONS = [
     "What is the main objective of the document?",
@@ -18,8 +21,15 @@ QUESTIONS = [
 
 def run_evaluation(model_name="gemini-3-flash-preview"):
     print("=" * 60)
-    print("Starting BATCH RAG System Evaluation (High Speed)")
-    print("=" * 60)
+    ui_name = {
+        "gemini-3-flash-preview": "Gemini 3.0 Flash", 
+        "gemini-3.6-flash": "Gemini 3.6 Flash", 
+        "gemini-3.5-flash": "Gemini 3.5 Flash",
+        "openai/gpt-oss-120b": "GPT-OSS 120B (Groq)",
+        "openai/gpt-oss-20b": "GPT-OSS 20B (Groq)"
+    }.get(model_name, model_name)
+    
+    is_groq = "groq" in ui_name.lower()
     
     start_time = time.time()
     results = []
@@ -41,13 +51,22 @@ def run_evaluation(model_name="gemini-3-flash-preview"):
         for i, (q, ctx) in enumerate(zip(QUESTIONS, batch_contexts)):
             gen_prompt += f"--- Question {i+1} ---\nContext:\n{ctx}\nQuestion: {q}\n\n"
             
-        gen_response = eval_client.models.generate_content(
-            model=model_name,
-            contents=gen_prompt,
-            config=types.GenerateContentConfig(temperature=0.1)
-        )
-        
-        raw_answers = gen_response.text.replace('```json', '').replace('```', '').strip()
+        if is_groq:
+            gen_response = groq_client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "user", "content": gen_prompt}],
+                temperature=0.1
+            )
+            raw_answers = gen_response.choices[0].message.content
+        else:
+            gen_response = eval_client.models.generate_content(
+                model=model_name,
+                contents=gen_prompt,
+                config=types.GenerateContentConfig(temperature=0.1)
+            )
+            raw_answers = gen_response.text
+            
+        raw_answers = raw_answers.replace('```json', '').replace('```', '').strip()
         answers = json.loads(raw_answers)
         
         if len(answers) != 5:
@@ -62,13 +81,22 @@ def run_evaluation(model_name="gemini-3-flash-preview"):
         for i, (q, ctx, ans) in enumerate(zip(QUESTIONS, batch_contexts, answers)):
             eval_prompt += f"--- Pair {i+1} ---\nQuestion: {q}\nContext: {ctx}\nSystem Answer: {ans}\n\n"
             
-        eval_response = eval_client.models.generate_content(
-            model=model_name, # Use the selected model as the judge to bypass quota limits on 3.0 Flash
-            contents=eval_prompt,
-            config=types.GenerateContentConfig(temperature=0.1)
-        )
-        
-        raw_evals = eval_response.text.replace('```json', '').replace('```', '').strip()
+        if is_groq:
+            eval_response = groq_client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "user", "content": eval_prompt}],
+                temperature=0.1
+            )
+            raw_evals = eval_response.choices[0].message.content
+        else:
+            eval_response = eval_client.models.generate_content(
+                model=model_name,
+                contents=eval_prompt,
+                config=types.GenerateContentConfig(temperature=0.1)
+            )
+            raw_evals = eval_response.text
+            
+        raw_evals = raw_evals.replace('```json', '').replace('```', '').strip()
         evaluations = json.loads(raw_evals)
         
         if len(evaluations) != 5:
@@ -96,9 +124,11 @@ def run_evaluation(model_name="gemini-3-flash-preview"):
                 "explanation": ev.get("explanation", "")
             })
             print(f"\n[Q{i+1}] {q}")
-            print(f"Answer: {ans[:100]}...")
+            safe_ans = ans[:100].encode('ascii', 'replace').decode('ascii')
+            safe_reason = ev.get('explanation', '').encode('ascii', 'replace').decode('ascii')
+            print(f"Answer: {safe_ans}...")
             print(f"Scores -> Retrieval: {ev.get('retrieval_accuracy_score', 0)}/5 | Relevance: {ev.get('answer_relevance_score', 0)}/5 | Faithfulness: {ev.get('hallucination_score', 0)}/5")
-            print(f"Reasoning: {ev.get('explanation', '')}")
+            print(f"Reasoning: {safe_reason}")
             
         avg_retrieval = round(total_retrieval / 5, 1)
         avg_relevance = round(total_relevance / 5, 1)
@@ -122,11 +152,36 @@ def run_evaluation(model_name="gemini-3-flash-preview"):
             "details": results
         }
         
+    except APIError as e:
+        error_msg = str(e)
+        explanation = "Groq Evaluation failed due to an unexpected API error."
+        if "429" in error_msg:
+            explanation = "Judge Model Quota Exceeded (Groq). Please wait a few moments before evaluating again, or try testing a different chat model."
+            
+        print(f"Error parsing evaluation: {error_msg}")
+        for q in QUESTIONS:
+            results.append({
+                "question": q,
+                "latency": 0,
+                "retrieval_score": 0,
+                "relevance_score": 0,
+                "hallucination_score": 0,
+                "explanation": explanation
+            })
+            
+        return {
+            "success": False,
+            "avg_latency": 0.0,
+            "avg_retrieval": 0.0,
+            "avg_relevance": 0.0,
+            "avg_hallucination": 0.0,
+            "details": results
+        }
+        
     except Exception as e:
         error_msg = str(e)
         explanation = "Evaluation failed due to an unexpected error."
         if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-            import re
             retry_match = re.search(r'retryDelay\':\s*\'(\d+)s\'', error_msg)
             wait_time = f" {retry_match.group(1)} seconds" if retry_match else " a few moments"
             explanation = f"Judge Model Quota Exceeded. Please wait{wait_time} before evaluating again, or try testing a different chat model."
@@ -156,4 +211,4 @@ def run_evaluation(model_name="gemini-3-flash-preview"):
         }
 
 if __name__ == "__main__":
-    run_evaluation()
+    run_evaluation("openai/gpt-oss-120b")
