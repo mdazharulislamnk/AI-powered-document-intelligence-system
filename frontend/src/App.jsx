@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, FileText, Send, Loader2, Bot, CheckCircle2, AlertCircle, Menu, X, Sun, Moon, ChevronDown } from 'lucide-react';
+import { UploadCloud, FileText, Send, Loader2, Bot, CheckCircle2, AlertCircle, Menu, X, Sun, Moon, ChevronDown, Activity } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import ReactMarkdown from 'react-markdown';
 import { clsx } from 'clsx';
@@ -13,6 +13,7 @@ const MODELS = [
   { id: 'gemini-flash-latest', name: 'Gemini Flash Latest' },
   { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash' },
   { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
+  { id: 'gemini-3.0-flash', name: 'Gemini 3.0 Flash' },
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' }
 ];
 
@@ -30,6 +31,7 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [selectedModel, setSelectedModel] = useState(MODELS[0].id);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [isEvaluating, setIsEvaluating] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -89,6 +91,42 @@ function App() {
     },
     maxFiles: 1,
   });
+
+  const handleEvaluate = async () => {
+    if (uploadStatus !== 'success' || isEvaluating || isTyping) return;
+    setIsEvaluating(true);
+    setIsSidebarOpen(false);
+    
+    setMessages(prev => [...prev, { role: 'user', content: 'Run comprehensive RAG System Evaluation.' }]);
+    setMessages(prev => [...prev, { role: 'model', content: 'Initializing rigorous AI evaluation protocol... This will test 5 predefined questions against the document context. This may take up to 30 seconds.' }]);
+    
+    try {
+      const res = await fetch(`http://localhost:8001/api/evaluate?model=${selectedModel}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Evaluation failed');
+      
+      const scorecard = `**📊 Final RAG System Evaluation Scorecard**\n\n` +
+        `- **Average Latency**: ${data.avg_latency}s per query\n` +
+        `- **Retrieval Accuracy**: ${data.avg_retrieval}/5.0\n` +
+        `- **Answer Relevance**: ${data.avg_relevance}/5.0\n` +
+        `- **Faithfulness (No Hallucination)**: ${data.avg_hallucination}/5.0\n\n` +
+        `*Evaluation conducted using ${selectedModel} as the judge.*`;
+        
+      setMessages(prev => {
+        const newMsgs = [...prev];
+        newMsgs[newMsgs.length - 1].content = scorecard;
+        return newMsgs;
+      });
+    } catch (err) {
+      setMessages(prev => {
+        const newMsgs = [...prev];
+        newMsgs[newMsgs.length - 1].content = `**Evaluation Error**: ${err.message}`;
+        return newMsgs;
+      });
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
 
   const handleSendMessage = async (e) => {
     if (e) e.preventDefault();
@@ -232,7 +270,7 @@ function App() {
         
         {/* Header containing Theme Toggle and Model Selector */}
         <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/5 shrink-0 z-10 bg-white/80 dark:bg-[#131314]/80 backdrop-blur-md sticky top-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5 rounded-full">
               <Menu size={24} />
             </button>
@@ -243,10 +281,10 @@ function App() {
                 onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 transition-colors"
               >
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 truncate max-w-[120px] sm:max-w-none">
                   {MODELS.find(m => m.id === selectedModel)?.name}
                 </span>
-                <ChevronDown size={14} className="text-slate-500 dark:text-slate-400" />
+                <ChevronDown size={14} className="text-slate-500 dark:text-slate-400 shrink-0" />
               </button>
               
               {isModelDropdownOpen && (
@@ -276,14 +314,27 @@ function App() {
             </div>
           </div>
 
-          {/* Theme Toggle */}
-          <button 
-            onClick={() => setIsDarkMode(!isDarkMode)} 
-            className="p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5 rounded-full transition-colors"
-            title="Toggle theme"
-          >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* Evaluate Button */}
+            <button
+              onClick={handleEvaluate}
+              disabled={uploadStatus !== 'success' || isEvaluating || isTyping}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 disabled:opacity-50 transition-colors text-xs sm:text-sm font-medium"
+              title="Run Automated Evaluation"
+            >
+              {isEvaluating ? <Loader2 size={16} className="animate-spin" /> : <Activity size={16} />}
+              <span className="hidden sm:inline">Evaluate</span>
+            </button>
+            
+            {/* Theme Toggle */}
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)} 
+              className="p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5 rounded-full transition-colors"
+              title="Toggle theme"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
         </div>
 
         {/* Chat Feed */}
@@ -333,7 +384,7 @@ function App() {
                 </div>
               ))
             )}
-            {isTyping && (
+            {(isTyping || isEvaluating) && (
                <div className="flex justify-start">
                  <div className="flex gap-4 max-w-[85%] flex-row">
                    <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-indigo-500 to-purple-600 mt-1">
@@ -352,7 +403,7 @@ function App() {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 md:px-8 bg-white dark:bg-[#131314] shrink-0 w-full max-w-4xl mx-auto z-10 pb-6 transition-colors duration-300">
+        <div className="p-4 md:px-8 bg-white dark:bg-[#131314] shrink-0 w-full max-w-4xl mx-auto z-10 pb-4 md:pb-6 transition-colors duration-300">
           <form onSubmit={handleSendMessage} className="relative group flex items-end bg-slate-50 dark:bg-[#1e1f20] rounded-3xl p-1 shadow-sm border border-slate-200 dark:border-white/5 focus-within:border-slate-300 dark:focus-within:border-white/20 transition-colors">
             <textarea
               value={input}
@@ -369,21 +420,21 @@ function App() {
               }}
               rows={1}
               placeholder={uploadStatus === 'success' ? "Ask a question..." : "Please upload a document first..."}
-              disabled={uploadStatus !== 'success'}
+              disabled={uploadStatus !== 'success' || isEvaluating}
               className="w-full bg-transparent border-none text-slate-800 dark:text-slate-200 px-5 py-4 min-h-[56px] max-h-[150px] resize-none outline-none placeholder:text-slate-500 disabled:opacity-50 text-[15px]"
             />
             <div className="p-2 shrink-0 h-[56px] flex items-center">
               <button
                 type="submit"
-                disabled={!input.trim() || isTyping || uploadStatus !== 'success'}
+                disabled={!input.trim() || isTyping || isEvaluating || uploadStatus !== 'success'}
                 className="p-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-200 dark:hover:bg-white disabled:bg-slate-100 disabled:dark:bg-[#131314] disabled:text-slate-400 disabled:dark:text-slate-600 text-white dark:text-slate-900 rounded-full transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-[#131314]"
               >
-                <Send size={18} className={cn("transition-transform", input.trim() && !isTyping ? "-translate-y-0.5 translate-x-0.5" : "")} />
+                <Send size={18} className={cn("transition-transform", input.trim() && !isTyping && !isEvaluating ? "-translate-y-0.5 translate-x-0.5" : "")} />
               </button>
             </div>
           </form>
-          <div className="text-center mt-3 hidden md:block">
-            <p className="text-[11px] text-slate-500">Gemini can make mistakes. Verify important information. • Developed by Md. Azharul Islam</p>
+          <div className="text-center mt-3 pb-2 md:pb-0">
+            <p className="text-[11px] text-slate-500 px-4 leading-tight">Gemini can make mistakes. Verify important information. • Developed by Md. Azharul Islam</p>
           </div>
         </div>
       </main>

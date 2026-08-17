@@ -64,7 +64,7 @@ def evaluate_response(question, answer, context_chunks):
             "explanation": "Evaluation failed."
         }
 
-def run_evaluation():
+def run_evaluation(model_name="gemini-flash-latest"):
     print("=" * 60)
     print("Starting RAG System Evaluation (Bonus 3)")
     print("=" * 60)
@@ -74,6 +74,8 @@ def run_evaluation():
     total_relevance = 0
     total_hallucination = 0
     
+    results = []
+    
     for i, question in enumerate(QUESTIONS):
         print(f"\n[Question {i+1}/5]: {question}")
         
@@ -82,13 +84,14 @@ def run_evaluation():
         context_chunks = retrieve_context(question)
         
         if not context_chunks:
-            print("[X] No context retrieved. Is the database empty? Please upload a document first.")
-            return
+            error_msg = "[X] No context retrieved. Is the database empty? Please upload a document first."
+            print(error_msg)
+            return {"error": error_msg}
 
         # 2. Get Answer
         messages = [{"role": "user", "content": question}]
         answer = ""
-        for chunk in stream_rag_response(messages, context_chunks):
+        for chunk in stream_rag_response(messages, context_chunks, model_name=model_name):
             answer += chunk
             
         latency = time.time() - start_time
@@ -107,16 +110,38 @@ def run_evaluation():
               f"Relevance: {eval_metrics['answer_relevance_score']}/5 | "
               f"Faithfulness (No Hallucination): {eval_metrics['hallucination_score']}/5")
         print(f"Reasoning: {eval_metrics['explanation']}")
+        
+        results.append({
+            "question": question,
+            "latency": round(latency, 2),
+            "retrieval_score": eval_metrics["retrieval_accuracy_score"],
+            "relevance_score": eval_metrics["answer_relevance_score"],
+            "hallucination_score": eval_metrics["hallucination_score"]
+        })
 
     # Final Report
+    avg_latency = round(total_latency / 5, 2)
+    avg_retrieval = round(total_retrieval / 5, 1)
+    avg_relevance = round(total_relevance / 5, 1)
+    avg_hallucination = round(total_hallucination / 5, 1)
+    
     print("\n" + "=" * 60)
     print("FINAL EVALUATION REPORT")
     print("=" * 60)
-    print(f"Avg Latency:          {total_latency/5:.2f}s per query")
-    print(f"Avg Retrieval Acc:    {total_retrieval/5:.1f}/5.0")
-    print(f"Avg Answer Relevance: {total_relevance/5:.1f}/5.0")
-    print(f"Avg Faithfulness:     {total_hallucination/5:.1f}/5.0")
+    print(f"Avg Latency:          {avg_latency}s per query")
+    print(f"Avg Retrieval Acc:    {avg_retrieval}/5.0")
+    print(f"Avg Answer Relevance: {avg_relevance}/5.0")
+    print(f"Avg Faithfulness:     {avg_hallucination}/5.0")
     print("=" * 60)
+    
+    return {
+        "success": True,
+        "avg_latency": avg_latency,
+        "avg_retrieval": avg_retrieval,
+        "avg_relevance": avg_relevance,
+        "avg_hallucination": avg_hallucination,
+        "details": results
+    }
 
 if __name__ == "__main__":
     run_evaluation()
