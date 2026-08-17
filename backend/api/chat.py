@@ -12,7 +12,7 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[Message]
-    model: str = "gemini-flash-latest"
+    model: str = "gemini-3.5-flash"
 
 @router.post("/chat")
 async def chat_endpoint(req: ChatRequest):
