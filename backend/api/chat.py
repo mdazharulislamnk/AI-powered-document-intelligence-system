@@ -12,6 +12,7 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[Message]
+    model: str = "gemini-flash-latest"
 
 @router.post("/chat")
 async def chat_endpoint(req: ChatRequest):
@@ -19,10 +20,17 @@ async def chat_endpoint(req: ChatRequest):
         raise HTTPException(status_code=400, detail="Messages cannot be empty")
         
     user_query = req.messages[-1].content
-    context_chunks = retrieve_context(user_query)
+    
+    # Increase chunk retrieval limit if the user wants a full document summary or complete analysis
+    lower_query = user_query.lower()
+    top_k = 5
+    if any(word in lower_query for word in ["completely", "entire", "whole document", "all pages", "summarize", "full analysis"]):
+        top_k = 30 # Fetch much more context for comprehensive analysis
+        
+    context_chunks = retrieve_context(user_query, top_k=top_k)
     
     # Return a streaming response generator
     return StreamingResponse(
-        stream_rag_response([m.model_dump() for m in req.messages], context_chunks), 
+        stream_rag_response([m.model_dump() for m in req.messages], context_chunks, req.model), 
         media_type="text/plain"
     )
