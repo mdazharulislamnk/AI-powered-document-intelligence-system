@@ -10,9 +10,9 @@ function cn(...inputs) {
 }
 
 const MODELS = [
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3.0 Flash' },
   { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash' },
-  { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
-  { id: 'gemini-3-flash-preview', name: 'Gemini 3.0 Flash' }
+  { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' }
 ];
 
 function App() {
@@ -96,7 +96,7 @@ function App() {
     setIsSidebarOpen(false);
     
     setMessages(prev => [...prev, { role: 'user', content: 'Run comprehensive RAG System Evaluation.' }]);
-    setMessages(prev => [...prev, { role: 'model', content: 'Initializing rigorous AI evaluation protocol... This will test 5 predefined questions against the document context. This may take up to 30 seconds.' }]);
+    setMessages(prev => [...prev, { role: 'model', content: 'Initializing rigorous AI evaluation protocol... This will test 5 predefined questions against the document context. This will take a few seconds.' }]);
     
     try {
       const res = await fetch(`http://localhost:8001/api/evaluate?model=${selectedModel}`);

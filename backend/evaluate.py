@@ -63,7 +63,7 @@ def run_evaluation(model_name="gemini-3.5-flash"):
             eval_prompt += f"--- Pair {i+1} ---\nQuestion: {q}\nContext: {ctx}\nSystem Answer: {ans}\n\n"
             
         eval_response = eval_client.models.generate_content(
-            model="gemini-3.5-flash", # Dedicated judge model
+            model="gemini-3-flash-preview", # Dedicated judge model
             contents=eval_prompt,
             config=types.GenerateContentConfig(temperature=0.1)
         )
