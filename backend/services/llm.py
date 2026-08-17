@@ -5,7 +5,9 @@ from core.config import settings
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
-def stream_rag_response(messages: list[dict], context_chunks: list[dict]):
+from google.genai import errors
+
+def stream_rag_response(messages: list[dict], context_chunks: list[dict], model_name: str = "gemini-flash-latest"):
     # Format context for the LLM
     context_str = "CONTEXT:\n"
     for chunk in context_chunks:
@@ -32,12 +34,19 @@ def stream_rag_response(messages: list[dict], context_chunks: list[dict]):
         temperature=0.2,
     )
     
-    response_stream = client.models.generate_content_stream(
-        model="gemini-flash-latest",
-        contents=formatted_contents,
-        config=config
-    )
-    
-    for chunk in response_stream:
-        if chunk.text:
-            yield chunk.text
+    try:
+        response_stream = client.models.generate_content_stream(
+            model=model_name,
+            contents=formatted_contents,
+            config=config
+        )
+        
+        for chunk in response_stream:
+            if chunk.text:
+                yield chunk.text
+    except errors.ServerError as e:
+        yield f"\n\n**API Overloaded**: Google's Gemini API is currently experiencing unusually high demand for the `{model_name}` model. Please wait a few moments and try your request again, or switch to a different model in the settings."
+    except errors.ClientError as e:
+        yield f"\n\n**API Error**: An error occurred while communicating with the Google Gemini API for the `{model_name}` model. It might be unsupported. Try switching to a different model in the settings.\n\nError Details: {str(e)}"
+    except Exception as e:
+        yield f"\n\n**System Error**: An unexpected error occurred. {str(e)}"

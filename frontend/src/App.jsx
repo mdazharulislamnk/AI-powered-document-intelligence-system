@@ -383,7 +383,7 @@ function App() {
             </div>
           </form>
           <div className="text-center mt-3 hidden md:block">
-            <p className="text-[11px] text-slate-500">Gemini can make mistakes. Verify important information.</p>
+            <p className="text-[11px] text-slate-500">Gemini can make mistakes. Verify important information. • Developed by Md. Azharul Islam</p>
           </div>
         </div>
       </main>
