@@ -106,12 +106,23 @@ function App() {
       const hasError = data.details.some(d => d.explanation && d.explanation.includes('Judge Model'));
       const errorNote = hasError ? `\n\n**⚠️ Evaluation Interrupted**: ${data.details.find(d => d.explanation && d.explanation.includes('Judge Model')).explanation}` : '';
 
-      const scorecard = `**📊 Final RAG System Evaluation Scorecard**\n\n` +
+      let scorecard = `**📊 Final RAG System Evaluation Scorecard**\n\n` +
         `- **Average Latency**: ${data.avg_latency}s per query\n` +
         `- **Retrieval Accuracy**: ${data.avg_retrieval}/5.0\n` +
         `- **Answer Relevance**: ${data.avg_relevance}/5.0\n` +
         `- **Faithfulness (No Hallucination)**: ${data.avg_hallucination}/5.0\n\n` +
         `*Evaluation conducted using ${selectedModel} as the judge.*` + errorNote;
+
+      if (data.details && data.details.length > 0 && !hasError) {
+        scorecard += `\n\n---\n\n### 📝 Detailed Question Breakdown\n\n`;
+        data.details.forEach((d, idx) => {
+          scorecard += `**[Q${idx + 1}] ${d.question}**\n\n`;
+          scorecard += `* **Scores:** Retrieval: ${d.retrieval_score}/5 | Relevance: ${d.relevance_score}/5 | Faithfulness: ${d.hallucination_score}/5\n`;
+          if (d.explanation) {
+            scorecard += `* **Reasoning:** ${d.explanation}\n\n`;
+          }
+        });
+      }
         
       setMessages(prev => {
         const newMsgs = [...prev];
