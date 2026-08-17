@@ -10,9 +10,9 @@ function cn(...inputs) {
 }
 
 const MODELS = [
+  { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash' },
   { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
-  { id: 'gemini-3.0-flash', name: 'Gemini 3.0 Flash' },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' }
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3.0 Flash' }
 ];
 
 function App() {
