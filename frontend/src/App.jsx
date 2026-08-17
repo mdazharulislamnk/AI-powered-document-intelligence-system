@@ -96,7 +96,7 @@ function App() {
     setIsSidebarOpen(false);
     
     setMessages(prev => [...prev, { role: 'user', content: 'Run comprehensive RAG System Evaluation.' }]);
-    setMessages(prev => [...prev, { role: 'model', content: 'Initializing rigorous AI evaluation protocol... This will test 5 predefined questions against the document context. This will take a few seconds.' }]);
+    setMessages(prev => [...prev, { role: 'model', content: 'Initializing rigorous AI evaluation protocol... This will test 5 predefined questions against the document context. This will take anywhere from a few seconds to up to a few minutes depending on Gemini API response times and rate limits.' }]);
     
     try {
       const res = await fetch(`http://localhost:8001/api/evaluate?model=${selectedModel}`);
