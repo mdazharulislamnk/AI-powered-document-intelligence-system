@@ -136,7 +136,7 @@ function App() {
             <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
               <Bot size={20} className="text-white" />
             </div>
-            <h1 className="text-base font-semibold tracking-tight text-slate-100">AI Document System</h1>
+            <h1 className="text-sm font-semibold tracking-tight text-slate-100 leading-tight">AI-powered Document Intelligence System</h1>
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-white">
             <X size={24} />
@@ -219,8 +219,8 @@ function App() {
         </div>
 
         {/* Chat Feed */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth flex flex-col items-center relative">
-          <div className="w-full max-w-3xl space-y-8 pb-8 mt-auto flex flex-col justify-end min-h-full">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth flex flex-col items-center relative custom-scrollbar">
+          <div className="w-full max-w-3xl space-y-8 pb-8 flex flex-col">
             
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center space-y-6 my-auto fade-in slide-in-from-bottom-4 duration-700">
