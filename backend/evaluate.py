@@ -47,7 +47,7 @@ def evaluate_response(question, answer, context_chunks):
     
     try:
         response = eval_client.models.generate_content(
-            model="gemini-3-flash",
+            model="gemini-flash-latest",
             contents=prompt,
             config=types.GenerateContentConfig(temperature=0.1)
         )

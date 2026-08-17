@@ -33,7 +33,7 @@ def stream_rag_response(messages: list[dict], context_chunks: list[dict]):
     )
     
     response_stream = client.models.generate_content_stream(
-        model="gemini-3-flash",
+        model="gemini-flash-latest",
         contents=formatted_contents,
         config=config
     )
