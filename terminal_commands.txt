@@ -1,0 +1,40 @@
+# Milestone 1: Project Scaffolding
+
+# Backend Scaffolding
+mkdir backend
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install fastapi uvicorn pydantic-settings python-dotenv
+pip freeze > requirements.txt
+cd ..
+
+# Frontend Scaffolding
+npx create-vite@latest frontend --template react-ts
+cd frontend
+npm install
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+cd ..
+
+
+# Milestone 2: Backend & Document Processing
+
+# Install Backend Dependencies
+cd backend
+venv\Scripts\activate
+pip install python-multipart chromadb pypdf langchain-text-splitters sentence-transformers requests
+pip freeze > requirements.txt
+cd ..
+
+# Milestone 3: RAG Pipeline
+cd backend
+venv\Scripts\activate
+pip install google-genai
+pip freeze > requirements.txt
+cd ..
+
+# Milestone 4: Frontend Integration
+cd frontend
+npm install lucide-react react-dropzone react-markdown clsx tailwind-merge
+cd ..
