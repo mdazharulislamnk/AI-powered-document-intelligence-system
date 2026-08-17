@@ -56,12 +56,22 @@ def evaluate_response(question, answer, context_chunks):
         raw_text = response.text.replace('```json', '').replace('```', '').strip()
         return json.loads(raw_text)
     except Exception as e:
-        print(f"Error parsing evaluation: {e}")
+        error_msg = str(e)
+        explanation = "Evaluation failed due to an unexpected error."
+        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+            import re
+            retry_match = re.search(r'retryDelay\':\s*\'(\d+)s\'', error_msg)
+            wait_time = f" {retry_match.group(1)} seconds" if retry_match else " a few moments"
+            explanation = f"Judge Model Quota Exceeded. Please wait{wait_time} before evaluating again, or try testing a different chat model."
+        elif "503" in error_msg:
+            explanation = "Judge Model Overloaded. Please try evaluating again in a few moments."
+            
+        print(f"Error parsing evaluation: {error_msg}")
         return {
             "retrieval_accuracy_score": 0,
             "answer_relevance_score": 0,
             "hallucination_score": 0,
-            "explanation": "Evaluation failed."
+            "explanation": explanation
         }
 
 def run_evaluation(model_name="gemini-flash-latest"):
@@ -116,7 +126,8 @@ def run_evaluation(model_name="gemini-flash-latest"):
             "latency": round(latency, 2),
             "retrieval_score": eval_metrics["retrieval_accuracy_score"],
             "relevance_score": eval_metrics["answer_relevance_score"],
-            "hallucination_score": eval_metrics["hallucination_score"]
+            "hallucination_score": eval_metrics["hallucination_score"],
+            "explanation": eval_metrics.get("explanation", "")
         })
         
         # Sleep to prevent hitting burst rate limits (429) on Google's free tier

@@ -10,8 +10,6 @@ function cn(...inputs) {
 }
 
 const MODELS = [
-  { id: 'gemini-flash-latest', name: 'Gemini Flash Latest' },
-  { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash' },
   { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
   { id: 'gemini-3.0-flash', name: 'Gemini 3.0 Flash' },
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' }
@@ -105,12 +103,15 @@ function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Evaluation failed');
       
+      const hasError = data.details.some(d => d.explanation && d.explanation.includes('Judge Model'));
+      const errorNote = hasError ? `\n\n**⚠️ Evaluation Interrupted**: ${data.details.find(d => d.explanation && d.explanation.includes('Judge Model')).explanation}` : '';
+
       const scorecard = `**📊 Final RAG System Evaluation Scorecard**\n\n` +
         `- **Average Latency**: ${data.avg_latency}s per query\n` +
         `- **Retrieval Accuracy**: ${data.avg_retrieval}/5.0\n` +
         `- **Answer Relevance**: ${data.avg_relevance}/5.0\n` +
         `- **Faithfulness (No Hallucination)**: ${data.avg_hallucination}/5.0\n\n` +
-        `*Evaluation conducted using ${selectedModel} as the judge.*`;
+        `*Evaluation conducted using ${selectedModel} as the judge.*` + errorNote;
         
       setMessages(prev => {
         const newMsgs = [...prev];

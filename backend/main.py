@@ -19,7 +19,7 @@ app.include_router(upload_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 
 @app.get("/api/evaluate")
-def evaluate_endpoint(model: str = "gemini-flash-latest"):
+def evaluate_endpoint(model: str = "gemini-3.5-flash"):
     try:
         results = run_evaluation(model_name=model)
         if "error" in results:
