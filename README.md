@@ -101,62 +101,111 @@ Create a `.env` file in the root directory and define the following keys. You ca
 
 ## 7. A to Z Setup Guide (Manual Installation)
 
-### Backend Setup
-1. Open a terminal and navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Create and activate a Python virtual environment:
-   ```bash
-   python -m venv venv
-   # Windows
-   .\venv\Scripts\activate
-   # macOS/Linux
-   source venv/bin/activate
-   ```
-3. Install Python dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Start the FastAPI development server:
-   ```bash
-   python -m uvicorn main:app --port 8001 --reload
-   ```
+This guide provides absolutely every command required to start the project from scratch, assuming you have Python (3.10+) and Node.js (20+) installed.
 
-### Frontend Setup
-1. Open a new terminal and navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install Node modules:
-   ```bash
-   npm install
-   ```
-3. Start the Vite development server:
-   ```bash
-   npm run dev
-   ```
-4. Access the application in your browser at `http://localhost:5173`.
+### Step 1: Clone the Repository
+Open your terminal (Command Prompt, PowerShell, or Bash) and clone the project to your local machine:
+```bash
+git clone https://github.com/mdazharulislamnk/AI-powered-document-intelligence-system.git
+cd AI-powered-document-intelligence-system
+```
+
+### Step 2: Environment Configuration
+You must create a `.env` file to securely store your API keys.
+1. In the root directory of the project, create a new file named exactly `.env`.
+2. Open the `.env` file in any text editor and paste the following configuration:
+```env
+# Gemini API Key (Required for standard LLM queries)
+# Get yours here: https://aistudio.google.com/app/apikey
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Groq API Key (Required for GPT-OSS 120B/20B high-speed models)
+# Get yours here: https://console.groq.com/keys
+GROQ_API_KEY=your_groq_api_key_here
+
+# Embeddings Configuration (Set to False on low-RAM servers like Render)
+USE_LOCAL_EMBEDDINGS=True
+
+# HuggingFace Token (Only required if USE_LOCAL_EMBEDDINGS=False)
+HF_TOKEN=your_huggingface_token_here
+```
+
+### Step 3: Backend Setup (Python & FastAPI)
+1. Navigate into the backend directory:
+```bash
+cd backend
+```
+2. Create an isolated Python Virtual Environment to prevent dependency conflicts:
+```bash
+python -m venv venv
+```
+3. Activate the Virtual Environment. The command depends on your operating system:
+   * **Windows (Command Prompt):**
+     ```cmd
+     venv\Scripts\activate.bat
+     ```
+   * **Windows (PowerShell):**
+     ```powershell
+     .\venv\Scripts\Activate.ps1
+     ```
+   * **macOS & Linux:**
+     ```bash
+     source venv/bin/activate
+     ```
+4. Install all required Python dependencies into the virtual environment:
+```bash
+pip install -r requirements.txt
+```
+5. Start the FastAPI Development Server:
+```bash
+python -m uvicorn main:app --port 8001 --reload
+```
+*Leave this terminal open. The backend API is now running at `http://localhost:8001`.*
+
+### Step 4: Frontend Setup (React & Vite)
+1. Open a **new, separate terminal window** (do not close the backend terminal).
+2. Navigate into the frontend directory from the root project folder:
+```bash
+cd frontend
+```
+3. Install all Node.js dependencies using npm:
+```bash
+npm install
+```
+4. Start the Vite Development Server:
+```bash
+npm run dev
+```
+*The frontend is now running at `http://localhost:5173`. Open this URL in your web browser to use the application!*
 
 ---
 
 ## 8. A to Z Setup Guide (Docker Compose)
 
-If you prefer an isolated setup without installing dependencies globally, you can use Docker.
+If you prefer a completely isolated setup without manually installing Python, Node.js, or virtual environments globally, you can use Docker.
 
-1. Ensure Docker Desktop is running.
-2. In the root directory (where `docker-compose.yml` is located), execute:
-   ```bash
-   docker-compose up --build
-   ```
-3. Wait for the images to build and services to start.
+### Step 1: Install Prerequisites
+* Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) for Windows/Mac or Docker Engine for Linux.
+
+### Step 2: Configure Environment
+* Ensure your `.env` file is created in the root directory exactly as described in Step 2 of the manual installation.
+
+### Step 3: Build and Launch
+1. Open a terminal in the root directory of the project (where the `docker-compose.yml` file is located).
+2. Execute the build and up command:
+```bash
+docker-compose up --build
+```
+3. Wait for the terminal to finish downloading the images and building the containers. This may take a few minutes the first time.
 4. **Verify Services:**
-   - Frontend running at: `http://localhost:5173`
-   - Backend running at: `http://localhost:8001` (You can visit `http://localhost:8001/docs` for the Swagger API UI).
-5. To stop the containers safely, press `CTRL+C` or run:
-   ```bash
-   docker-compose down
-   ```
+   - The Frontend React app is mapped to: `http://localhost:5173`
+   - The Backend API is mapped to: `http://localhost:8001` (You can visit `http://localhost:8001/docs` for the interactive Swagger API UI).
+
+### Step 4: Shutting Down
+To stop the containers safely, press `CTRL+C` in the terminal where Docker is running. Alternatively, open a new terminal in the root directory and run:
+```bash
+docker-compose down
+```
 
 ---
 
