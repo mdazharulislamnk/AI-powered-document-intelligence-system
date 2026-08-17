@@ -47,6 +47,11 @@ def stream_rag_response(messages: list[dict], context_chunks: list[dict], model_
     except errors.ServerError as e:
         yield f"\n\n**API Overloaded**: Google's Gemini API is currently experiencing unusually high demand for the `{model_name}` model. Please wait a few moments and try your request again, or switch to a different model in the settings."
     except errors.ClientError as e:
-        yield f"\n\n**API Error**: An error occurred while communicating with the Google Gemini API for the `{model_name}` model. It might be unsupported. Try switching to a different model in the settings.\n\nError Details: {str(e)}"
+        error_str = str(e)
+        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+            yield f"\n\n**Rate Limit Reached**: You have exceeded the Google API free tier quota for the `{model_name}` model (too many requests). Please wait a minute and try again, or switch to a different model."
+        else:
+            clean_err = getattr(e, 'message', str(e).split("{'error'")[0].strip())
+            yield f"\n\n**API Error**: An error occurred while communicating with the Google Gemini API for the `{model_name}` model. Try switching to a different model in the settings.\n\nDetails: {clean_err}"
     except Exception as e:
         yield f"\n\n**System Error**: An unexpected error occurred. {str(e)}"

@@ -118,6 +118,10 @@ def run_evaluation(model_name="gemini-flash-latest"):
             "relevance_score": eval_metrics["answer_relevance_score"],
             "hallucination_score": eval_metrics["hallucination_score"]
         })
+        
+        # Sleep to prevent hitting burst rate limits (429) on Google's free tier
+        if i < len(QUESTIONS) - 1:
+            time.sleep(5)
 
     # Final Report
     avg_latency = round(total_latency / 5, 2)
